@@ -1,0 +1,25 @@
+server:
+  port: 8080 #端口号
+spring:
+  application:
+    name: reggie_take_out #不配置就使用默认的工程名
+  datasource:
+    druid:
+      type: com.alibaba.druid.pool.DruidDataSource #当前数据源操作类型
+      driver-class-name: com.mysql.cj.jdbc.Driver #mysql驱动包
+      url: jdbc:mysql://127.0.0.1:3306/reggie
+      username: root
+      password: 12345678
+mybatis-plus:
+  configuration:
+    #在映射实体或者属性时，将数据库中表名和字段名中的下划线去掉，再按照驼峰命名法映射
+    map-underscore-to-camel-case: true
+    log-impl: org.apache.ibatis.logging.stdout.StdOutImpl
+  global-config:
+    db-config:
+      id-type: ASSIGN_ID
+
+#指定文件存放地址
+reggie:
+  path: /Users/wangyue/Desktop/my_reggie/uploadimg/
+

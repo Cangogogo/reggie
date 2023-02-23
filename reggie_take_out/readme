@@ -1,0 +1,156 @@
+# 后台功能
+
+1.登录功能，同时判断是否已经登录，未登录返回登录页；
+2.退出系统
+3.登录过滤器
+4.员工管理--添加员工、员工分页展示+查询、管理员启动/禁用员工状态、编辑员工信息
+4.分类管理--公共字段自动填充、新增分类、分类信息分页展示+查询、删除分类(判断是否关联了菜品和套餐)、修改分类
+5.菜品管理--文件的上传和下载（加载）(上传文件指定了存放地址)、新增菜品、菜品信息分页+查询
+
+## 后台登录功能
+> 输入用户名和密码后，处理登陆需求
+```
+**大体思路**：
+1.类Controller：接收用户名和密码,之后再操作
+2.类Service：调用Mapper查询数据库employee表
+**具体操作**：
+1.创建实体类Employee，和数据库中的employee表进行映射
+2.创建类Controller、Service、Mapper
+3.导入返回结果类R--通用结果类，服务端响应的所有结果都会包装成此类型返回给前端
+```
+
+
+
+## 后台退出功能
+> 员工退出系统，跳转回登录界面
+```
+类Controller中具体操作：
+1.清理Session中的用户id
+2.返回结果
+```
+## 登录过滤器
+> 拦截请求，判断是否进行登录。
+```
+1.创建过滤器
+2.在启动类上加入注解@ServletComponentScan
+3.完善过滤器处理逻辑
+```
+## 员工管理
+
+### 新增员工
+```
+大体思路：
+1.页面发送ajax请求，将新增员工也民输入的数据以json的形式提交到服务端
+2.服务端Cotroller接收数据并调用Service保存数据
+3.类Service：调用Mapper操作数据库employee表
+```
+### 员工分页+查询
+```
+大体思路：
+1、页面发送ajax请求，将分页查询参数（page、pageSize、name）
+2、服务端Controller接收页面提交的数据并调用Service查询数据
+3、Service调用Mapper操作数据库，查询分页数据
+4、Controller将查询到的分页数据响应给页面
+5、页面接收到分页数据并通过ElementUI的Table组件展示到页面上
+```
+
+### 启用/禁用员工账号
+```
+1.只有管理员（admin）用户可以对其他普通用户进行启用、禁用操作
+2.账号禁用的员工不能登录系统
+**具体操作**：
+1.发送ajax请求，将参数（ID，status）提交到服务器
+2.服务器Controller接收页面提交的数据并调用Service更新数据
+3.类Service：调用Mapper操作数据库employee表
+```
+==注意：==
+服务端响应给页面的数据id中id的值为19位数字，类型为long。
+页面中js处理long型数字只能精确到前16位。
+
+所以：
+1. 提供对象转换器JacksonObjectMapper，基于Jackson进行Java对象到json数据的转换。
+2. 并且在WebMvcConfig配置类中扩展Spring MVC的消息转换器，在此消息转换器中使用提供的对象转换器进行Java对象到json数据的转换
+
+### 编辑员工信息
+```
+程序的执行流程：
+1、在点击编辑按钮时，页面跳转到add.html，并在url中携带参数[员工id]
+2、在add.html页面获取url中的参数[员工id]
+3、发送ajax请求、请求服务端，同时提交员工id参数
+4、服务端接收请求，根据员工id查询员工信息，将员工信息以json形式响应给页面
+5、页面接收服务端响应的json数据，通过VUE的数据绑定进行员工信息回显
+6、点击保存按钮，发送ajax请求，将页面中的员工信息以json方式提交给服务端
+7、服务端接收员工信息，并进行处理，完成后给页面响应
+8、页面接收到服务端响应信息后进行相应处理
+```
+
+
+## 分类管理
+### 公共字段自动填充
+> Mybatis Plus公共字段自动填充，
+> 也就是在插入或者更新的时候位指定字段赋予指定的值，使用它的好处就是可以统一对这些字段进行处理，避免代码重复。
+```
+实现步骤：
+1、在实体类的属性上加入@TableField注解，指定自动填充的策略
+2、按照框架要求编写元数据对象处理器，在此类中统一为公共字段赋值，此类需要实现MetaObjectHandler接口
+```
+==注意：==
+在MyMetaObjectHandler类中是不能获取HttpSession对象的，所以需要使用其他方式来获取登录用户的id
+这里使用ThreadLocal来解决此问题，它是JDK中提供的一个类
+在学习ThreadLocal之前，还要确认一个事，就是客户端发送的每次Http请求，对应的在服务端都会分配一个新的线程来处理，
+在处理过程中涉及到下面类中的方法都属于相同的一个线程：
+1、LoginCheckFilter的doFilter方法
+2、EmployeeController的update方法
+3、MyMetaObjectHandler的updateFill方法
+
+ThreadLocal并不是一个Thread，而是Thread的局部变量。
+ThreadLocal为每个线程提供单独一份存储空间，具有线程隔离的效果，只有在线程内才能获取到对应的值，线程外则不能访问。
+
+public void set（T value） 设置当前线程的线程局部变量的值
+public T get() 返回当前线程所对应的线程局部变量的值
+
+可以在LoginCheckFilter的doFilter方法中获取当前登录用户id，并调用ThreadLoacl的set方法来设置当前线程的线程局部变量的值（用户id），
+然后再MyMetaObjectHandler的updateFill方法中调用ThreadLocal的get方法来获取当前线程所对应的线程局部变量的值（用户id）。
+```
+实现步骤
+1、编写BaseContext工具类，基于ThreadLocal封装的工具类
+2、在LoginCheckFilter的doFilter方法中调用BaseContext来设置当前登录用户的id
+3、在MyMetaObjectHandler的方法中调用BaseContext获取登录用户的id
+```
+
+### 新增分类
+
+### 分类信息分页查询
+
+### 删除分类
+
+### 修改分类
+
+## 菜品管理
+### 文件的上传和下载
+文件上传时，对页面的form表单有如下要求：
+medthod="post" 采用post方式提交数据
+enctype="multipart/form-data" 采用multipart格式上传文件
+type="file" 使用input的file控件上传
+前端有现成的组件，如ElementUI 中的upload上传组件
+
+服务端要接收客户端页面上传的文件，通常都会使用Apache的两个组件：
+commons-fileupload
+commons-io
+Spring框架在Spring-web包中对文件上传进行了封装，简化了服务端代码，只需要在controller的方法中声明一个MultipartFile类型 参数即可接收上传文件
+
+通过浏览器进行文件下载，通常有两种表现形式：
+以附件的形式下载，弹出保存对话框，将文件保存到指定磁盘目录
+直接在浏览器中打开
+通过浏览器进行文件下载，本质上是服务端将文件以流的形式写回浏览器的过程。
+
+### 新增菜品
+==注意事项：==
+DTO，全称Data Transfer Object，即数据传输对象，一般用于展示层与服务层之间的数据传输。
+分析：
+前面没有使用到DTO是因为，前面的传输数据和实体类的属性都是一一对应的，现在传输的数据跟实体类里的属性并不是一一对应的，这时候就需要专门的DTO来传输。
+
+### 菜品信息分页+查询
+1、页面（backend/page/food/list.html）发送ajax请求，将分页查询参数（page、pageSize、name）提交到服务端，获取分页数据
+2、页面发送请求，请求服务端进行图片下载，用于页面图片展示
+开发菜品信息分页查询功能，就是在服务端，编写代码去处理前端页面发送的这2次请求即可。
