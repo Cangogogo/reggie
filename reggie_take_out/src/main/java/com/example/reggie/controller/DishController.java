@@ -3,8 +3,10 @@ package com.example.reggie.controller;
 import java.util.List;
 import java.util.stream.Collectors;
 
+import org.apache.ibatis.annotations.Delete;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -16,10 +18,12 @@ import org.springframework.web.bind.annotation.RestController;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
+import com.example.reggie.common.CustomException;
 import com.example.reggie.common.R;
 import com.example.reggie.dto.DishDto;
 import com.example.reggie.entity.Category;
 import com.example.reggie.entity.Dish;
+import com.example.reggie.entity.DishFlavor;
 import com.example.reggie.service.CategoryService;
 import com.example.reggie.service.DishFlavorService;
 import com.example.reggie.service.DishService;
@@ -165,10 +169,34 @@ public class DishController {
     }
 
 
+    /**
+     * 删除菜品
+     */
+    @DeleteMapping
+    public R<String> delete(@RequestParam List<Long> ids){
+        //构造一个条件构造器
+        LambdaQueryWrapper<Dish> queryWrapper = new LambdaQueryWrapper<>();
+        //判断浏览器传来的ids是否为空，并和菜品表中的id进行匹配
+        queryWrapper.in(ids != null, Dish::getId,ids);
+        List<Dish> list = dishService.list(queryWrapper);
+        for(Dish dish : list){
+            //判断当前菜品是否在售卖阶段，0停售，1起售
+            if (dish.getStatus() == 0) {
+                //停售状态直接删除
+                dishService.removeById(dish.getId());
 
-
-
-
+                LambdaQueryWrapper<DishFlavor> dishFlavorLambdaQueryWrapper = new LambdaQueryWrapper<>();
+                //根据菜品id匹配口味表中的菜品id
+                dishFlavorLambdaQueryWrapper.eq(DishFlavor::getDishId, dish.getId());
+                //删除菜品id关联的口味表信息
+                dishFlavorService.remove(dishFlavorLambdaQueryWrapper);
+            }
+            else{
+                throw new CustomException("此菜品还在售卖阶段，删除影响销售！");
+            }
+        }
+        return R.success("删除成功+++");
+    }
 
 }
 
