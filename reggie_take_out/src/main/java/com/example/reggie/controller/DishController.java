@@ -11,6 +11,7 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
@@ -137,6 +138,33 @@ public class DishController {
 
         return R.success("修改菜品成功");
     }
+
+    /**
+     * 修改售卖状态（起售，停售）
+     * @param status
+     * @param ids
+     * @return
+     */
+    @PostMapping("/status/{status}")
+    public R<String> statusWithIds(@PathVariable("status") Integer status,@RequestParam List<Long> ids) {
+        //构造一个条件构造器
+        LambdaQueryWrapper<Dish> queryWrapper = new LambdaQueryWrapper<>();
+        queryWrapper.in(ids != null, Dish::getId, ids);
+        queryWrapper.orderByDesc(Dish::getPrice);
+        //根据条件进行批量查询
+        List<Dish> list = dishService.list(queryWrapper);
+        for (Dish dish : list) {
+            if (dish != null) {
+                //把浏览器传入的status参数赋值给菜品
+                dish.setStatus(status);
+                log.info("此时status为 {}",dish.getStatus());
+                dishService.updateById(dish);
+            }
+        }
+        return R.success("售卖状态修改成功");
+    }
+
+
 
 
 
