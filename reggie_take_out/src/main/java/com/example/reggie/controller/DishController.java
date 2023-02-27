@@ -6,6 +6,7 @@ import java.util.stream.Collectors;
 import org.apache.ibatis.annotations.Delete;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -173,6 +174,7 @@ public class DishController {
      * 删除菜品
      */
     @DeleteMapping
+    @Transactional  //因为多表操作开启事务
     public R<String> delete(@RequestParam List<Long> ids){
         //构造一个条件构造器
         LambdaQueryWrapper<Dish> queryWrapper = new LambdaQueryWrapper<>();
@@ -197,6 +199,28 @@ public class DishController {
         }
         return R.success("删除成功+++");
     }
+
+        /**
+     * 根据条件查询对应的菜品数据
+     *
+     * @param dish
+     * @return
+     */
+    @GetMapping("/list")
+    public R<List<Dish>> list(Dish dish) {
+        //构造条件查询对象
+        LambdaQueryWrapper<Dish> queryWrapper = new LambdaQueryWrapper<>();
+        queryWrapper.eq(dish.getCategoryId() != null, Dish::getCategoryId, dish.getCategoryId());
+        //查询状态为1的菜品，也就是查询正在起售的商品
+        queryWrapper.eq(Dish::getStatus,1);
+        //添加排序条件
+        queryWrapper.orderByAsc(Dish::getSort).orderByDesc(Dish::getUpdateTime);
+
+        List<Dish> list = dishService.list(queryWrapper);
+        return R.success(list);
+    }
+
+
 
 }
 
