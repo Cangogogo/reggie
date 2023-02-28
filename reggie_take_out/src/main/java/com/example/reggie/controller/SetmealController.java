@@ -7,7 +7,9 @@ import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -132,14 +134,54 @@ public class SetmealController {
         return R.success("删除套餐成功！");
     }
 
+    /**
+     * 根据id来查询套餐信息和对应的菜品信息
+     * @param id
+     * @return
+     */
+    @GetMapping("/{id}")
+    public R<SetmealDto> get (@PathVariable Long id){
+        SetmealDto setmealDao = setmealService.getByIdWithDish(id);
+        return R.success(setmealDao);
+    }
+
+    /**
+     * 更新套餐信息，同时更新对应的菜品信息
+     *
+     * @param setmealDto
+     */
+    @PutMapping
+    public R<String> update(@RequestBody SetmealDto setmealDto){
+        log.info(setmealDto.toString());
+
+        setmealService.updateWithDish(setmealDto);
+        return R.success("修改套餐成功");
+    }
+
+    /**
+     * 修改套餐的售卖状态
+     *
+     * @return
+     */
+    @PostMapping("/status/{status}")
+    public R<String> statusWithIds(@PathVariable("status") Integer status, @RequestParam List<Long> ids) {
+        //构造一个条件构造器
+        LambdaQueryWrapper<Setmeal> queryWrapper = new LambdaQueryWrapper<>();
+        queryWrapper.in(ids != null, Setmeal::getId, ids);
+        queryWrapper.orderByDesc(Setmeal::getPrice);
+        //根据条件进行批量查询
+        List<Setmeal> list = setmealService.	list(queryWrapper);
+        for (Setmeal setmeal : list) {
+            if (list != null) {
+                //把浏览器传入的status参数复制给套餐
+                setmeal.setStatus(status);
+                setmealService.updateById(setmeal);
+            }
+        }
+        return R.success("售卖状态修改成功");
+    }
 
 
+}
 
-
-
-
-
-
-
-} 
 
