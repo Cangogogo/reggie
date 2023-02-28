@@ -167,10 +167,9 @@ public class SetmealController {
     public R<String> statusWithIds(@PathVariable("status") Integer status, @RequestParam List<Long> ids) {
         //构造一个条件构造器
         LambdaQueryWrapper<Setmeal> queryWrapper = new LambdaQueryWrapper<>();
-        queryWrapper.in(ids != null, Setmeal::getId, ids);
-        queryWrapper.orderByDesc(Setmeal::getPrice);
-        //根据条件进行批量查询
-        List<Setmeal> list = setmealService.	list(queryWrapper);
+        queryWrapper.in(ids != null, Setmeal::getId, ids);//根据id
+        queryWrapper.orderByDesc(Setmeal::getPrice);//排序
+        List<Setmeal> list = setmealService.list(queryWrapper);
         for (Setmeal setmeal : list) {
             if (list != null) {
                 //把浏览器传入的status参数复制给套餐
