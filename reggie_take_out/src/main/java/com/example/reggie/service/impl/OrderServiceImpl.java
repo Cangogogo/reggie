@@ -70,9 +70,9 @@ public class OrderServiceImpl extends ServiceImpl<OrderMapper, Orders> implement
 
         long orderId = IdWorker.getId();//订单号
 
-        AtomicInteger amount = new AtomicInteger(0);
+        AtomicInteger amount = new AtomicInteger(0);//初始化总金额
 
-        // 想订单明细表插入数据，多条数据
+        // 准备向订单明细表插入数据，多条数据
         List<OrderDetail> orderDetails = shoppingCarts.stream().map((item) -> {
             OrderDetail orderDetail = new OrderDetail();
             orderDetail.setOrderId(orderId);
@@ -83,11 +83,11 @@ public class OrderServiceImpl extends ServiceImpl<OrderMapper, Orders> implement
             orderDetail.setName(item.getName());
             orderDetail.setImage(item.getImage());
             orderDetail.setAmount(item.getAmount());
-            amount.addAndGet(item.getAmount().multiply(new BigDecimal(item.getNumber())).intValue());
+            amount.addAndGet(item.getAmount().multiply(new BigDecimal(item.getNumber())).intValue());//算总金额
             return orderDetail;
         }).collect(Collectors.toList());
 
-        //  向订单表插入数据，一条数据
+        //  准备向订单表插入数据，一条数据
         orders.setId(orderId);
         orders.setOrderTime(LocalDateTime.now());
         orders.setCheckoutTime(LocalDateTime.now());
@@ -102,7 +102,6 @@ public class OrderServiceImpl extends ServiceImpl<OrderMapper, Orders> implement
                 + (addressBook.getCityName() == null ? "" : addressBook.getCityName())
                 + (addressBook.getDistrictName() == null ? "" : addressBook.getDistrictName())
                 + (addressBook.getDetail() == null ? "" : addressBook.getDetail()));
-        //向订单表插入数据，一条数据
         this.save(orders);
 
         //向订单明细表插入数据，多条数据
