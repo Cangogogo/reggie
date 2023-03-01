@@ -72,6 +72,7 @@ public class OrderServiceImpl extends ServiceImpl<OrderMapper, Orders> implement
 
         AtomicInteger amount = new AtomicInteger(0);
 
+        // 想订单明细表插入数据，多条数据
         List<OrderDetail> orderDetails = shoppingCarts.stream().map((item) -> {
             OrderDetail orderDetail = new OrderDetail();
             orderDetail.setOrderId(orderId);
@@ -86,7 +87,7 @@ public class OrderServiceImpl extends ServiceImpl<OrderMapper, Orders> implement
             return orderDetail;
         }).collect(Collectors.toList());
 
-
+        //  向订单表插入数据，一条数据
         orders.setId(orderId);
         orders.setOrderTime(LocalDateTime.now());
         orders.setCheckoutTime(LocalDateTime.now());
@@ -111,7 +112,7 @@ public class OrderServiceImpl extends ServiceImpl<OrderMapper, Orders> implement
         shoppingCartService.remove(wrapper);
     }
 
-    	/**
+    /**
      * 后台查询订单明细
      *
      * @param page

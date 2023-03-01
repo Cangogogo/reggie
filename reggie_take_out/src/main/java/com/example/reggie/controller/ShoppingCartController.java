@@ -61,7 +61,7 @@ public class ShoppingCartController {
             shoppingCartService.updateById(cartServiceOne);
         }else{
             //如果不存在，则添加到购物车，数量默认就是一
-            shoppingCart.setNumber(1);
+            shoppingCart.setNumber(1);//设置数量为1
             shoppingCart.setCreateTime(LocalDateTime.now());
             shoppingCartService.save(shoppingCart);
             cartServiceOne = shoppingCart;
@@ -102,4 +102,53 @@ public class ShoppingCartController {
 
         return R.success("清空购物车成功");
     }
+
+    /**
+     * 购物车减一
+     * @param shoppingCart
+     * @return
+     */
+    @PostMapping("/sub")
+    public R<ShoppingCart> sub(@RequestBody ShoppingCart shoppingCart){
+        Long dishId = shoppingCart.getDishId();
+        LambdaQueryWrapper<ShoppingCart> lambdaQueryWrapper = new LambdaQueryWrapper<>();
+        if(dishId != null){
+            //菜品减一
+            lambdaQueryWrapper.eq(ShoppingCart::getDishId,dishId);
+            lambdaQueryWrapper.eq(ShoppingCart::getUserId,BaseContext.getCurrentId());
+            ShoppingCart one = shoppingCartService.getOne(lambdaQueryWrapper);
+            Integer number = one.getNumber();
+            if(number > 1){
+                one.setNumber(number-1);
+                shoppingCartService.updateById(one);
+            }
+            else{
+                //1<=的情况
+                one.setNumber(number-1);
+                shoppingCartService.updateById(one);
+                shoppingCartService.remove(lambdaQueryWrapper);
+            }
+            return R.success(one);
+
+        }else{
+            //套餐减一
+            lambdaQueryWrapper.clear();
+            lambdaQueryWrapper.eq(ShoppingCart::getSetmealId,shoppingCart.getSetmealId());
+            lambdaQueryWrapper.eq(ShoppingCart::getUserId,BaseContext.getCurrentId());
+            ShoppingCart one = shoppingCartService.getOne(lambdaQueryWrapper);
+            Integer number = one.getNumber();
+            if(number > 1){
+                one.setNumber(number-1);
+                shoppingCartService.updateById(one);
+            }
+            else{
+                one.setNumber(number-1);
+                shoppingCartService.updateById(one);
+                shoppingCartService.remove(lambdaQueryWrapper);
+            }
+            return R.success(one);
+        }
+    }
+
+
 }

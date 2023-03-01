@@ -45,25 +45,25 @@ public class SetmealController {
     @Autowired
     private CategoryService categoryService;
 
-    /**
-     * 根据条件查询对应的菜品数据
-     *
-     * @param dish
-     * @return
-     */
-    @GetMapping("/list")
-    public R<List<Dish>> list(Dish dish) {
-        //构造条件查询对象
-        LambdaQueryWrapper<Dish> queryWrapper = new LambdaQueryWrapper<>();
-        queryWrapper.eq(dish.getCategoryId() != null, Dish::getCategoryId, dish.getCategoryId());
-        //查询状态为1的菜品，也就是查询正在起售的商品
-        queryWrapper.eq(Dish::getStatus,1);
-        //添加排序条件
-        queryWrapper.orderByAsc(Dish::getSort).orderByDesc(Dish::getUpdateTime);
+    // /**
+    //  * 根据条件查询对应的菜品数据
+    //  *
+    //  * @param dish
+    //  * @return
+    //  */
+    // @GetMapping("/list")
+    // public R<List<Dish>> list(Dish dish) {
+    //     //构造条件查询对象
+    //     LambdaQueryWrapper<Dish> queryWrapper = new LambdaQueryWrapper<>();
+    //     queryWrapper.eq(dish.getCategoryId() != null, Dish::getCategoryId, dish.getCategoryId());
+    //     //查询状态为1的菜品，也就是查询正在起售的商品
+    //     queryWrapper.eq(Dish::getStatus,1);
+    //     //添加排序条件
+    //     queryWrapper.orderByAsc(Dish::getSort).orderByDesc(Dish::getUpdateTime);
 
-        List<Dish> list = dishService.list(queryWrapper);
-        return R.success(list);
-    }
+    //     List<Dish> list = dishService.list(queryWrapper);
+    //     return R.success(list);
+    // }
 
     @PostMapping
     public R<String> save(@RequestBody SetmealDto setmealDto) {
@@ -178,6 +178,23 @@ public class SetmealController {
             }
         }
         return R.success("售卖状态修改成功");
+    }
+
+    /**
+     * 根据条件查询套餐数据
+     * @param setmeal
+     * @return
+     */
+    @GetMapping("/list")
+    public R<List<Setmeal>> list(Setmeal setmeal){
+        LambdaQueryWrapper<Setmeal> queryWrapper = new LambdaQueryWrapper<>();
+        queryWrapper.eq(setmeal.getCategoryId() != null,Setmeal::getCategoryId,setmeal.getCategoryId());
+        queryWrapper.eq(setmeal.getStatus() != null,Setmeal::getStatus,setmeal.getStatus());
+        queryWrapper.orderByDesc(Setmeal::getUpdateTime);
+
+        List<Setmeal> list = setmealService.list(queryWrapper);
+
+        return R.success(list);
     }
 
 
