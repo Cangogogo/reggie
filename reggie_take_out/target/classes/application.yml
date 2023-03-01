@@ -10,6 +10,22 @@ spring:
       url: jdbc:mysql://127.0.0.1:3306/reggie
       username: root
       password: 12345678
+
+  
+  mail:
+    host: smtp.qq.com
+    username: 1612124171@qq.com
+    password: gkbvpwhodcdmdedf
+    port: 587
+    default-encoding: UTF-8
+    properties:
+      mail:
+        smtp:
+          socketFactoryClass: javax.net.ssl.SSLSocketFactory
+  #         开启debug以后，邮件发送过程的日志会在控制台上打印出来
+          debug: true
+
+  
 mybatis-plus:
   configuration:
     #在映射实体或者属性时，将数据库中表名和字段名中的下划线去掉，再按照驼峰命名法映射

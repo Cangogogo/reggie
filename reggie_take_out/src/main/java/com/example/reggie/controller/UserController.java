@@ -9,6 +9,10 @@ import com.example.reggie.utils.ValidateCodeUtils;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.mail.MailException;
+import org.springframework.mail.SimpleMailMessage;
+import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -25,6 +29,15 @@ public class UserController {
     @Autowired
     private UserService userService;
 
+    @Autowired
+    private JavaMailSender javaMailSender;
+
+    //注意这里我们将发送者从配置文件注入进来
+    @Value("${spring.mail.username}")
+    private String from;
+
+
+
     /**
      * 发送手机短信验证码
      * @param user
@@ -32,24 +45,39 @@ public class UserController {
      */
     @PostMapping("/sendMsg")
     public R<String> sendMsg(@RequestBody User user, HttpSession session){
-        //获取手机号
+        //获取邮箱号
         String phone = user.getPhone();
 
         if(StringUtils.isNotEmpty(phone)){
             //生成随机的4位验证码
             String code = ValidateCodeUtils.generateValidateCode(4).toString();
             log.info("code={}",code);
+            //构建一个邮件对象
+            SimpleMailMessage simpleMailMessage = new SimpleMailMessage();
+            //设置邮件发送者
+            simpleMailMessage.setFrom(phone);
+            //设置邮件接收者
+            simpleMailMessage.setTo(phone);
+            //设置邮件主题
+            simpleMailMessage.setSubject("登录验证码");
+            //设置邮件内容
+            String text = "瑞吉外卖给您的验证码为" + code + "，请不要泄露";
+            simpleMailMessage.setText(text);
 
             //调用阿里云提供的短信服务API完成发送短信
             //SMSUtils.sendMessage("瑞吉外卖","",phone,code);
 
             //需要将生成的验证码保存到Session
             session.setAttribute(phone,code);
-
-            return R.success("手机验证码短信发送成功");
+            try{
+                javaMailSender.send(simpleMailMessage);
+                return R.success("验证码邮件发送成功");
+            }catch(MailException e){
+                e.printStackTrace();
+            }
         }
 
-        return R.error("短信发送失败");
+        return R.error("邮件发送失败");
     }
 
     /**
@@ -59,8 +87,14 @@ public class UserController {
      * @return
      */
     @PostMapping("/login")
+    //    这里使用map来接收前端传过来的值
     public R<User> login(@RequestBody Map map, HttpSession session){
         log.info(map.toString());
+
+        //从Session中获取到保存的验证码
+        //将session中获取到的验证码和前端提交过来的验证码进行比较，这样就可以实现一个验证的方式
+        //比对页面提交的验证码和session中
+        //判断当前的手机号在数据库查询是否有记录，如果没有记录，说明是一个新的用户，然后自动将这个手机号进行注册
 
         //获取手机号
         String phone = map.get("phone").toString();
@@ -86,6 +120,7 @@ public class UserController {
                 user.setStatus(1);
                 userService.save(user);
             }
+            // 这里我们将user存储进去，后面各项操作，我们会用，其中拦截器那边会判断用户是否登录，所以我们将这个存储进去，
             session.setAttribute("user",user.getId());
             return R.success(user);
         }
