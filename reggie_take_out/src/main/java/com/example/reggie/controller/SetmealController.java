@@ -5,6 +5,8 @@ import java.util.stream.Collectors;
 
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -66,6 +68,7 @@ public class SetmealController {
     // }
 
     @PostMapping
+    @CacheEvict(value="setmealCache",allEntries = true)//清理所有数据
     public R<String> save(@RequestBody SetmealDto setmealDto) {
         log.info(setmealDto.toString());
         setmealService.saveWithDish(setmealDto);
@@ -128,6 +131,11 @@ public class SetmealController {
      * @return
      */
     @DeleteMapping
+    //CacheEvict:清除缓存中key所对应的数据
+    //#root.args[0]获取参数表中的第一个数据
+    //#result.id:从返回结果中获得id属性值
+    //@CacheEvict(value="userCache",key="")
+    @CacheEvict(value="setmealCache",allEntries = true)//清理所有数据
     public R<String> delete(@RequestParam List<Long> ids) {
         log.info("ids:{}", ids);
         setmealService.removeWithDish(ids);
@@ -151,6 +159,7 @@ public class SetmealController {
      * @param setmealDto
      */
     @PutMapping
+    @CacheEvict(value="setmealCache",allEntries = true)//清理所有数据
     public R<String> update(@RequestBody SetmealDto setmealDto){
         log.info(setmealDto.toString());
 
@@ -186,6 +195,13 @@ public class SetmealController {
      * @return
      */
     @GetMapping("/list")
+    //Cacheable在方法执行前spring会先查看缓存中是否有数据,如果有数据,则直接返回缓存数据,如果没有数据,则会调用方法将方法返回值放到缓存中
+    //该注解还可以解决缓存穿透(redis和数据库中),体现在当key所对应的val在数据库中并不存在的时候,这时候会将一个空占位数据缓存到缓存中(缓存空对象,可以预防高并发的时候访问不存在的数据,服务端缓存空数据,客户端访问时直接返回空数据)
+    //condition可以用来指定什么情况下缓存数据,这里给的条件是当查询得到的result不为空的时候才把数据缓存到服务端(但Cacheable没有这个上下文对象)
+    //unless是除非的意思,也就是除非#result==null的时候就不缓存
+    //注意:key应该是有唯一格式,用来规定查询何种缓存
+    //@Cacheable(value="userCache",key="",unless = "#result==null")
+    @Cacheable(value ="setmealCache",key = "#setmeal.categoryId+'_'+#status")
     public R<List<Setmeal>> list(Setmeal setmeal){
         LambdaQueryWrapper<Setmeal> queryWrapper = new LambdaQueryWrapper<>();
         queryWrapper.eq(setmeal.getCategoryId() != null,Setmeal::getCategoryId,setmeal.getCategoryId());

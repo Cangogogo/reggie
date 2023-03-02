@@ -28,8 +28,8 @@ cd Redis文件夹
 src/redis-server redis.conf
 1.缓存邮箱验证码
 2.缓存菜品数据，保证后台修改时清除缓存数据
-3.Spring Cache
-4.缓存套餐数据
+3.通过Spring Cache实现缓存套餐数据:通过注解缓存，注意将返回结果R实现序列化接口
+
 
 
 

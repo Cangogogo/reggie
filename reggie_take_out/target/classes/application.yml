@@ -10,11 +10,17 @@ spring:
       url: jdbc:mysql://127.0.0.1:3306/reggie
       username: root
       password: 12345678
+
   redis:
     host:locahost
     port:6379
     password:12345678
     database:0
+
+  cache:
+    redis:
+      time-to-live: 1800000 #设置缓存30分钟过期
+
 
   
   mail:
