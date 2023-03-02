@@ -1,3 +1,7 @@
+1.导入目录下的reggie.sql表结构
+2.启动ReggieApplication.java
+
+
 # 后台功能
 
 1.登录功能，同时判断是否已经登录，未登录返回登录页；
@@ -30,8 +34,7 @@ src/redis-server redis.conf
 2.缓存菜品数据，保证后台修改时清除缓存数据
 3.通过Spring Cache实现缓存套餐数据:通过注解缓存，注意将返回结果R实现序列化接口
 
-
-
+#前后端分离
 
 
 
